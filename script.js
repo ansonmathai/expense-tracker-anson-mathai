@@ -59,7 +59,6 @@ function updateSummary() {
   const chosenMonth = parseInt(selectMonth.value, 10);
   const chosenYear = parseInt(selectYear.value, 10);
 
-  // Dynamic concise label to avoid card overflow
   const periodLabel = document.getElementById('selected-period-label');
   if (periodLabel) {
     periodLabel.textContent = `${monthNamesShort[chosenMonth]} ${chosenYear} Expense`;
@@ -119,18 +118,13 @@ function render() {
 
   const selectedType = filterType.value;
   const categorySearch = filterCategory.value.toLowerCase().trim();
-  const fromDate = filterFromDate.value; // Returns "" when unselected
-  const toDate = filterToDate.value;     // Returns "" when unselected
+  const fromDate = filterFromDate.value;
+  const toDate = filterToDate.value;
 
   const filtered = transactions.filter(t => {
-    // 1. Type matching
     const matchesType = selectedType === 'all' || t.type === selectedType;
-
-    // 2. Category matching
-    const matchesCategory = !categorySearch || 
-      (t.category && t.category.toLowerCase().includes(categorySearch));
+    const matchesCategory = !categorySearch || (t.category && t.category.toLowerCase().includes(categorySearch));
     
-    // 3. Date Range matching (Explicit empty string checks)
     let matchesDateRange = true;
     if (fromDate && fromDate.trim() !== '') {
       if (!t.date || t.date < fromDate) matchesDateRange = false;
