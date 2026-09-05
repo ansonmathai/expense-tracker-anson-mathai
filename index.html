@@ -1,468 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Expense Tracker with Analytics</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    :root {
-      --bg-color: #f4f6f9;
-      --card-bg: #ffffff;
-      --primary: #4f46e5;
-      --income-color: #10b981;
-      --expense-color: #ef4444;
-      --text-main: #1f2937;
-      --text-muted: #6b7280;
-      --border-color: #e5e7eb;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text-main); padding: 1.5rem; display: flex; justify-content: center; }
-    .container { max-width: 1000px; width: 100%; display: grid; gap: 1.5rem; grid-template-columns: 1fr; }
-
-    @media (min-width: 768px) {
-      .container { grid-template-columns: 1fr 1.2fr; }
-      .full-width { grid-column: span 2; }
-    }
-
-    .card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-    .header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
-    h2, h3 { color: var(--text-main); }
-
-    /* Summary Dashboard */
-    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; text-align: center; }
-    .summary-card p { font-size: 0.85rem; color: var(--text-muted); }
-    .summary-card h3 { font-size: 1.2rem; margin-top: 0.25rem; }
-    .income-val { color: var(--income-color); }
-    .expense-val { color: var(--expense-color); }
-
-    .month-selector { display: flex; gap: 0.5rem; align-items: center; }
-    .month-selector select { padding: 0.35rem 0.6rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.85rem; }
-
-    /* Forms & Inputs */
-    form { display: flex; flex-direction: column; gap: 0.75rem; }
-    .form-group { display: flex; flex-direction: column; gap: 0.25rem; }
-    label { font-size: 0.875rem; font-weight: 600; }
-    input, select { padding: 0.6rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.9rem; width: 100%; }
-    input.invalid { border-color: var(--expense-color); }
-    button { padding: 0.75rem; border: none; border-radius: 6px; background: var(--primary); color: white; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-    button:hover { opacity: 0.9; }
-    .cancel-btn { background: var(--text-muted); margin-top: 0.5rem; }
-    .error-msg { color: var(--expense-color); font-size: 0.75rem; display: none; }
-
-    /* Filter Bar Layout */
-    .filter-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      align-items: center;
-    }
-    .filter-grid input, .filter-grid select {
-      padding: 0.45rem 0.6rem;
-      font-size: 0.85rem;
-    }
-
-    /* Scrollable Transaction List */
-    .transaction-list { 
-      list-style: none; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 0.75rem; 
-      height: 280px; 
-      overflow-y: auto; 
-      padding-right: 0.25rem;
-    }
-
-    .transaction-item { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      padding: 0.75rem 1rem; 
-      border-radius: 8px; 
-      background: #f9fafb; 
-      border: 1px solid var(--border-color); 
-    }
-    .transaction-item.income { border-left: 5px solid var(--income-color); }
-    .transaction-item.expense { border-left: 5px solid var(--expense-color); }
-
-    /* Cleaned Up Edit/Delete Visuals */
-    .tx-right { display: flex; align-items: center; gap: 1rem; }
-    .tx-amount { font-weight: 700; font-size: 0.95rem; text-align: right; }
-    .tx-actions { display: flex; gap: 0.25rem; }
-    
-    .icon-btn {
-      background: transparent;
-      border: 1px solid transparent;
-      border-radius: 6px;
-      padding: 0.35rem 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.2rem;
-      transition: all 0.15s ease;
-    }
-    .icon-btn:hover { background: #f3f4f6; }
-    .icon-btn.edit-btn:hover { color: var(--primary); border-color: #c7d2fe; background: #eef2ff; }
-    .icon-btn.delete-btn:hover { color: var(--expense-color); border-color: #fecaca; background: #fef2f2; }
-
-    .chart-container { position: relative; height: 280px; display: flex; justify-content: center; align-items: center; }
-  </style>
-</head>
-<body>
-
-<div class="container">
-  <!-- Financial Overview -->
-  <div class="card full-width">
-    <div class="header-row">
-      <h2>Financial Overview</h2>
-      <div class="month-selector">
-        <select id="select-month">
-          <option value="0">January</option>
-          <option value="1">February</option>
-          <option value="2">March</option>
-          <option value="3">April</option>
-          <option value="4">May</option>
-          <option value="5">June</option>
-          <option value="6">July</option>
-          <option value="7">August</option>
-          <option value="8">September</option>
-          <option value="9">October</option>
-          <option value="10">November</option>
-          <option value="11">December</option>
-        </select>
-        <select id="select-year"></select>
-      </div>
-    </div>
-    
-    <div class="summary-grid">
-      <div class="summary-card">
-        <p>Current Balance</p>
-        <h3 id="total-balance">$0.00</h3>
-      </div>
-      <div class="summary-card">
-        <p>Total Income</p>
-        <h3 id="total-income" class="income-val">$0.00</h3>
-      </div>
-      <div class="summary-card">
-        <p>Total Expenses</p>
-        <h3 id="total-expenses" class="expense-val">$0.00</h3>
-      </div>
-      <div class="summary-card">
-        <p id="selected-period-label">Selected Month Expense</p>
-        <h3 id="monthly-expense" class="expense-val">$0.00</h3>
-      </div>
-    </div>
-  </div>
-
-  <!-- Form -->
-  <div class="card">
-    <h3 id="form-title">Add Transaction</h3>
-    <form id="tx-form" novalidate>
-      <input type="hidden" id="tx-id">
-      
-      <div class="form-group">
-        <label for="description">Description</label>
-        <input type="text" id="description" placeholder="e.g. Groceries">
-        <span class="error-msg" id="desc-error">Please enter a description.</span>
-      </div>
-
-      <div class="form-group">
-        <label for="amount">Amount ($)</label>
-        <input type="number" id="amount" step="0.01" placeholder="0.00">
-        <span class="error-msg" id="amount-error">Please enter a valid amount.</span>
-      </div>
-
-      <div class="form-group">
-        <label for="type">Type</label>
-        <select id="type">
-          <option value="expense" selected>Expense</option>
-          <option value="income">Income</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="category">Category</label>
-        <input type="text" id="category" placeholder="e.g. Food, Salary">
-        <span class="error-msg" id="category-error">Please enter a category.</span>
-      </div>
-
-      <div class="form-group">
-        <label for="date">Date</label>
-        <input type="date" id="date">
-        <span class="error-msg" id="date-error">Please select a date.</span>
-      </div>
-
-      <button type="submit" id="submit-btn">Add Transaction</button>
-      <button type="button" id="cancel-btn" class="cancel-btn" style="display: none;">Cancel Edit</button>
-    </form>
-  </div>
-
-  <!-- Chart -->
-  <div class="card">
-    <h3>Expense Breakdown by Category</h3>
-    <div class="chart-container">
-      <canvas id="categoryChart"></canvas>
-    </div>
-  </div>
-
-  <!-- Transaction History with Date-Range Filters -->
-  <div class="card full-width">
-    <h3>Transaction History</h3>
-    
-    <div class="filter-grid">
-      <select id="filter-type">
-        <option value="all">All Types</option>
-        <option value="income">Income</option>
-        <option value="expense">Expense</option>
-      </select>
-      <input type="text" id="filter-category" placeholder="Filter category...">
-      <input type="date" id="filter-from-date" title="From Date">
-      <input type="date" id="filter-to-date" title="To Date">
-    </div>
-
-    <ul class="transaction-list" id="tx-list"></ul>
-  </div>
-</div>
-
-<script>
-  let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-  let isEditing = false;
-  let chartInstance = null;
-
-  const form = document.getElementById('tx-form');
-  const txIdInput = document.getElementById('tx-id');
-  const descInput = document.getElementById('description');
-  const amountInput = document.getElementById('amount');
-  const typeInput = document.getElementById('type');
-  const categoryInput = document.getElementById('category');
-  const dateInput = document.getElementById('date');
-  const submitBtn = document.getElementById('submit-btn');
-  const cancelBtn = document.getElementById('cancel-btn');
-
-  const filterType = document.getElementById('filter-type');
-  const filterCategory = document.getElementById('filter-category');
-  const filterFromDate = document.getElementById('filter-from-date');
-  const filterToDate = document.getElementById('filter-to-date');
-
-  const txList = document.getElementById('tx-list');
-  const selectMonth = document.getElementById('select-month');
-  const selectYear = document.getElementById('select-year');
-
-  function initSelectors() {
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    selectMonth.value = today.getMonth();
-
-    selectYear.innerHTML = '';
-    for (let y = currentYear - 5; y <= currentYear + 2; y++) {
-      const option = document.createElement('option');
-      option.value = y;
-      option.textContent = y;
-      if (y === currentYear) option.selected = true;
-      selectYear.appendChild(option);
-    }
-  }
-
-  dateInput.value = new Date().toISOString().split('T')[0];
-
-  function saveAndRender() {
-    localStorage.setItem('transactions', JSON.stringify(transactions));
-    render();
-  }
-
-  function updateSummary() {
-    const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-    const expenses = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-    const balance = income - expenses;
-
-    const chosenMonth = parseInt(selectMonth.value, 10);
-    const chosenYear = parseInt(selectYear.value, 10);
-
-    const filteredMonthlyExpense = transactions
-      .filter(t => t.type === 'expense')
-      .filter(t => {
-        if (!t.date) return false;
-        const [yearStr, monthStr] = t.date.split('-');
-        return (parseInt(monthStr, 10) - 1) === chosenMonth && parseInt(yearStr, 10) === chosenYear;
-      })
-      .reduce((acc, t) => acc + t.amount, 0);
-
-    document.getElementById('total-balance').textContent = `$${balance.toFixed(2)}`;
-    document.getElementById('total-income').textContent = `$${income.toFixed(2)}`;
-    document.getElementById('total-expenses').textContent = `$${expenses.toFixed(2)}`;
-    document.getElementById('monthly-expense').textContent = `$${filteredMonthlyExpense.toFixed(2)}`;
-  }
-
-  function renderChart() {
-    const expenseData = {};
-    transactions.filter(t => t.type === 'expense').forEach(t => {
-      const cat = t.category.toLowerCase();
-      const formattedCat = cat.charAt(0).toUpperCase() + cat.slice(1);
-      expenseData[formattedCat] = (expenseData[formattedCat] || 0) + t.amount;
-    });
-
-    const labels = Object.keys(expenseData);
-    const data = Object.values(expenseData);
-    const ctx = document.getElementById('categoryChart').getContext('2d');
-
-    if (chartInstance) chartInstance.destroy();
-    if (labels.length === 0) return;
-
-    chartInstance = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: data,
-          backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#64748b']
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom' } }
-      }
-    });
-  }
-
-  function render() {
-    updateSummary();
-    renderChart();
-    txList.innerHTML = '';
-
-    const selectedType = filterType.value;
-    const categorySearch = filterCategory.value.toLowerCase().trim();
-    const fromDate = filterFromDate.value;
-    const toDate = filterToDate.value;
-
-    const filtered = transactions.filter(t => {
-      const matchesType = selectedType === 'all' || t.type === selectedType;
-      const matchesCategory = t.category.toLowerCase().includes(categorySearch);
-      
-      let matchesDateRange = true;
-      if (fromDate && t.date < fromDate) matchesDateRange = false;
-      if (toDate && t.date > toDate) matchesDateRange = false;
-
-      return matchesType && matchesCategory && matchesDateRange;
-    });
-
-    if (filtered.length === 0) {
-      txList.innerHTML = '<li style="text-align:center; color: var(--text-muted); padding: 1rem;">No transactions found.</li>';
-      return;
-    }
-
-    filtered.forEach(t => {
-      const li = document.createElement('li');
-      li.className = `transaction-item ${t.type}`;
-      li.innerHTML = `
-        <div>
-          <strong>${escapeHtml(t.description)}</strong>
-          <div style="font-size:0.75rem; color: var(--text-muted);">
-            ${escapeHtml(t.category)} • ${t.date}
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Financial Summary -->
+      <div class="card full-width">
+        <div class="header-row">
+          <h2>Financial Overview</h2>
+          <div class="month-selector">
+            <select id="select-month">
+              <option value="0">January</option>
+              <option value="1">February</option>
+              <option value="2">March</option>
+              <option value="3">April</option>
+              <option value="4">May</option>
+              <option value="5">June</option>
+              <option value="6">July</option>
+              <option value="7">August</option>
+              <option value="8">September</option>
+              <option value="9">October</option>
+              <option value="10">November</option>
+              <option value="11">December</option>
+            </select>
+            <select id="select-year"></select>
           </div>
         </div>
-        <div class="tx-right">
-          <div class="tx-amount">${t.type === 'income' ? '+' : '-'}$${t.amount.toFixed(2)}</div>
-          <div class="tx-actions">
-            <button class="icon-btn edit-btn" onclick="startEdit('${t.id}')" title="Edit">Edit</button>
-            <button class="icon-btn delete-btn" onclick="deleteTransaction('${t.id}')" title="Delete">Delete</button>
+        
+        <div class="summary-grid">
+          <div class="summary-card">
+            <p>Current Balance</p>
+            <h3 id="total-balance">₹0.00</h3>
+          </div>
+          <div class="summary-card">
+            <p>Total Income</p>
+            <h3 id="total-income" class="income-val">₹0.00</h3>
+          </div>
+          <div class="summary-card">
+            <p>Total Expenses</p>
+            <h3 id="total-expenses" class="expense-val">₹0.00</h3>
+          </div>
+          <div class="summary-card">
+            <p id="selected-period-label">Selected Month Expense</p>
+            <h3 id="monthly-expense" class="expense-val">₹0.00</h3>
           </div>
         </div>
-      `;
-      txList.appendChild(li);
-    });
-  }
+      </div>
 
-  function escapeHtml(str) {
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-  }
+      <!-- Form -->
+      <div class="card card-flex">
+        <h3 id="form-title" style="margin-bottom: 0.75rem;">Add Transaction</h3>
+        <form id="tx-form" novalidate>
+          <input type="hidden" id="tx-id">
+          
+          <div class="form-group">
+            <label for="description">Description</label>
+            <input type="text" id="description" placeholder="e.g. Groceries">
+            <span class="error-msg" id="desc-error">Please enter a description.</span>
+          </div>
 
-  function validateForm() {
-    let isValid = true;
-    document.querySelectorAll('.error-msg').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('input').forEach(el => el.classList.remove('invalid'));
+          <div class="form-group">
+            <label for="amount">Amount (₹)</label>
+            <input type="number" id="amount" step="0.01" placeholder="0.00">
+            <span class="error-msg" id="amount-error">Please enter a valid amount.</span>
+          </div>
 
-    if (!descInput.value.trim()) { document.getElementById('desc-error').style.display = 'block'; descInput.classList.add('invalid'); isValid = false; }
-    if (!amountInput.value || parseFloat(amountInput.value) <= 0) { document.getElementById('amount-error').style.display = 'block'; amountInput.classList.add('invalid'); isValid = false; }
-    if (!categoryInput.value.trim()) { document.getElementById('category-error').style.display = 'block'; categoryInput.classList.add('invalid'); isValid = false; }
-    if (!dateInput.value) { document.getElementById('date-error').style.display = 'block'; dateInput.classList.add('invalid'); isValid = false; }
-    return isValid;
-  }
+          <div class="form-group">
+            <label for="type">Type</label>
+            <select id="type">
+              <option value="expense" selected>Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+          <div class="form-group">
+            <label for="category">Category</label>
+            <input type="text" id="category" placeholder="e.g. Food, Salary">
+            <span class="error-msg" id="category-error">Please enter a category.</span>
+          </div>
 
-    const payload = {
-      id: isEditing ? txIdInput.value : Date.now().toString(),
-      description: descInput.value.trim(),
-      amount: parseFloat(parseFloat(amountInput.value).toFixed(2)),
-      type: typeInput.value,
-      category: categoryInput.value.trim(),
-      date: dateInput.value
-    };
+          <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date">
+            <span class="error-msg" id="date-error">Please select a date.</span>
+          </div>
 
-    if (isEditing) {
-      transactions = transactions.map(t => t.id === payload.id ? payload : t);
-      resetForm();
-    } else {
-      transactions.unshift(payload);
-    }
+          <button type="submit" id="submit-btn">Add Transaction</button>
+          <button type="button" id="cancel-btn" class="cancel-btn" style="display: none;">Cancel Edit</button>
+        </form>
+      </div>
 
-    form.reset();
-    dateInput.value = new Date().toISOString().split('T')[0];
-    saveAndRender();
-  });
+      <!-- Chart -->
+      <div class="card chart-card">
+        <h3>Expense Chart by Category</h3>
+        <div class="chart-container">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
 
-  window.startEdit = function(id) {
-    const t = transactions.find(item => item.id === id);
-    if (!t) return;
+      <!-- Transaction History -->
+      <div class="card full-width">
+        <h3>Transaction History</h3>
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label for="filter-type">Type</label>
+            <select id="filter-type">
+              <option value="all">All Types</option>
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+          </div>
 
-    isEditing = true;
-    txIdInput.value = t.id;
-    descInput.value = t.description;
-    amountInput.value = t.amount;
-    typeInput.value = t.type;
-    categoryInput.value = t.category;
-    dateInput.value = t.date;
+          <div class="filter-group">
+            <label for="filter-category">Category</label>
+            <input type="text" id="filter-category" placeholder="Search category...">
+          </div>
 
-    document.getElementById('form-title').textContent = 'Edit Transaction';
-    submitBtn.textContent = 'Update Transaction';
-    cancelBtn.style.display = 'block';
-  };
+          <div class="filter-group">
+            <label for="filter-from-date">From Date</label>
+            <input type="date" id="filter-from-date">
+          </div>
 
-  function resetForm() {
-    isEditing = false;
-    txIdInput.value = '';
-    form.reset();
-    dateInput.value = new Date().toISOString().split('T')[0];
-    document.getElementById('form-title').textContent = 'Add Transaction';
-    submitBtn.textContent = 'Add Transaction';
-    cancelBtn.style.display = 'none';
-  }
-
-  cancelBtn.addEventListener('click', resetForm);
-
-  window.deleteTransaction = function(id) {
-    transactions = transactions.filter(t => t.id !== id);
-    if (isEditing && txIdInput.value === id) resetForm();
-    saveAndRender();
-  };
-
-  selectMonth.addEventListener('change', updateSummary);
-  selectYear.addEventListener('change', updateSummary);
-  filterType.addEventListener('change', render);
-  filterCategory.addEventListener('input', render);
-  filterFromDate.addEventListener('change', render);
-  filterToDate.addEventListener('change', render);
-
-  initSelectors();
-  render();
-</script>
-</body>
+          <div class="filter-group">
+            <label for="filter-to-date">To Date</label>
+            <input type="date" id="filter-to-date">
+          </div>
+        </div>
+        <!-- Transaction List -->
+        <ul class="transaction-list" id="tx-list"></ul>
+      </div>
+    </div>
+  </body>
 </html>
