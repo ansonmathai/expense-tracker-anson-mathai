@@ -246,5 +246,7 @@ filterCategory.addEventListener('input', render);
 filterFromDate.addEventListener('change', render);
 filterToDate.addEventListener('change', render);
 
-initSelectors();
-render();
+document.addEventListener('DOMContentLoaded', () => {
+  initSelectors();
+  render();
+});
