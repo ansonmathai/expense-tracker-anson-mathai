@@ -1,0 +1,10 @@
+{
+  "homepage": "https://ansonmathai.github.io/expense-tracker-anson-mathai",
+  "scripts": {
+    "deploy": "gh-pages -d ."
+  },
+  
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
+  }
+}

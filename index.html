@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Financial Summary -->
+      <div class="card full-width">
+        <div class="header-row">
+          <h2>Financial Overview</h2>
+          <div class="month-selector">
+            <select id="select-month">
+              <option value="0">January</option>
+              <option value="1">February</option>
+              <option value="2">March</option>
+              <option value="3">April</option>
+              <option value="4">May</option>
+              <option value="5">June</option>
+              <option value="6">July</option>
+              <option value="7">August</option>
+              <option value="8">September</option>
+              <option value="9">October</option>
+              <option value="10">November</option>
+              <option value="11">December</option>
+            </select>
+            <select id="select-year"></select>
+          </div>
+        </div>
+        
+        <div class="summary-grid">
+          <div class="summary-card">
+            <p>Current Balance</p>
+            <h3 id="total-balance">₹0.00</h3>
+          </div>
+          <div class="summary-card">
+            <p>Total Income</p>
+            <h3 id="total-income" class="income-val">₹0.00</h3>
+          </div>
+          <div class="summary-card">
+            <p>Total Expenses</p>
+            <h3 id="total-expenses" class="expense-val">₹0.00</h3>
+          </div>
+          <div class="summary-card">
+            <p id="selected-period-label">Selected Month Expense</p>
+            <h3 id="monthly-expense" class="expense-val">₹0.00</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <div class="card card-flex">
+        <h3 id="form-title" style="margin-bottom: 0.75rem;">Add Transaction</h3>
+        <form id="tx-form" novalidate>
+          <input type="hidden" id="tx-id">
+          
+          <div class="form-group">
+            <label for="description">Description</label>
+            <input type="text" id="description" placeholder="e.g. Groceries">
+            <span class="error-msg" id="desc-error">Please enter a description.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="amount">Amount (₹)</label>
+            <input type="number" id="amount" step="0.01" placeholder="0.00">
+            <span class="error-msg" id="amount-error">Please enter a valid amount.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="type">Type</label>
+            <select id="type">
+              <option value="expense" selected>Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="category">Category</label>
+            <input type="text" id="category" placeholder="e.g. Food, Salary">
+            <span class="error-msg" id="category-error">Please enter a category.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date">
+            <span class="error-msg" id="date-error">Please select a date.</span>
+          </div>
+
+          <button type="submit" id="submit-btn">Add Transaction</button>
+          <button type="button" id="cancel-btn" class="cancel-btn" style="display: none;">Cancel Edit</button>
+        </form>
+      </div>
+
+      <!-- Chart -->
+      <div class="card chart-card">
+        <h3>Expense Chart by Category</h3>
+        <div class="chart-container">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Transaction History -->
+      <div class="card full-width">
+        <h3>Transaction History</h3>
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label for="filter-type">Type</label>
+            <select id="filter-type">
+              <option value="all">All Types</option>
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="filter-category">Category</label>
+            <input type="text" id="filter-category" placeholder="Search category...">
+          </div>
+
+          <div class="filter-group">
+            <label for="filter-from-date">From Date</label>
+            <input type="date" id="filter-from-date">
+          </div>
+
+          <div class="filter-group">
+            <label for="filter-to-date">To Date</label>
+            <input type="date" id="filter-to-date">
+          </div>
+        </div>
+        <!-- Transaction List -->
+        <ul class="transaction-list" id="tx-list"></ul>
+      </div>
+    </div>
+  </body>
+</html>
