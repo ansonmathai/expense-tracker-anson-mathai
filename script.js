@@ -119,16 +119,25 @@ function render() {
 
   const selectedType = filterType.value;
   const categorySearch = filterCategory.value.toLowerCase().trim();
-  const fromDate = filterFromDate.value;
-  const toDate = filterToDate.value;
+  const fromDate = filterFromDate.value; // Returns "" when unselected
+  const toDate = filterToDate.value;     // Returns "" when unselected
 
   const filtered = transactions.filter(t => {
+    // 1. Type matching
     const matchesType = selectedType === 'all' || t.type === selectedType;
-    const matchesCategory = t.category.toLowerCase().includes(categorySearch);
+
+    // 2. Category matching
+    const matchesCategory = !categorySearch || 
+      (t.category && t.category.toLowerCase().includes(categorySearch));
     
+    // 3. Date Range matching (Explicit empty string checks)
     let matchesDateRange = true;
-    if (fromDate && t.date < fromDate) matchesDateRange = false;
-    if (toDate && t.date > toDate) matchesDateRange = false;
+    if (fromDate && fromDate.trim() !== '') {
+      if (!t.date || t.date < fromDate) matchesDateRange = false;
+    }
+    if (toDate && toDate.trim() !== '') {
+      if (!t.date || t.date > toDate) matchesDateRange = false;
+    }
 
     return matchesType && matchesCategory && matchesDateRange;
   });
