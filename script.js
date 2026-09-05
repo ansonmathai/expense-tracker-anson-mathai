@@ -59,7 +59,6 @@ function updateSummary() {
   const chosenMonth = parseInt(selectMonth.value, 10);
   const chosenYear = parseInt(selectYear.value, 10);
 
-  // Dynamic concise label to avoid card overflow
   const periodLabel = document.getElementById('selected-period-label');
   if (periodLabel) {
     periodLabel.textContent = `${monthNamesShort[chosenMonth]} ${chosenYear} Expense`;
@@ -124,11 +123,15 @@ function render() {
 
   const filtered = transactions.filter(t => {
     const matchesType = selectedType === 'all' || t.type === selectedType;
-    const matchesCategory = t.category.toLowerCase().includes(categorySearch);
+    const matchesCategory = !categorySearch || (t.category && t.category.toLowerCase().includes(categorySearch));
     
     let matchesDateRange = true;
-    if (fromDate && t.date < fromDate) matchesDateRange = false;
-    if (toDate && t.date > toDate) matchesDateRange = false;
+    if (fromDate && fromDate.trim() !== '') {
+      if (!t.date || t.date < fromDate) matchesDateRange = false;
+    }
+    if (toDate && toDate.trim() !== '') {
+      if (!t.date || t.date > toDate) matchesDateRange = false;
+    }
 
     return matchesType && matchesCategory && matchesDateRange;
   });
